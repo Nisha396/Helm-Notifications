@@ -1,0 +1,41 @@
+name: Helm Deployment Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+
+permissions:
+  contents: write
+
+jobs:
+    build-and-push-image:
+      runs-on: ubuntu-latest
+      steps:
+        - name: Checkout repository
+          uses: actions/checkout@v4
+
+        - name: Set Image Tag
+          run: echo "IMAGE_TAG=${{ github.run_number }}-${{ github.sha }}" >> $GITHUB_ENV
+
+        - name: Build the Docker image
+          run: docker build -t ${{ secrets.username }}/notification-service:${IMAGE_TAG} .
+
+        - name: Log in to Docker Hub
+          run: echo ${{ secrets.password }} | docker login -u ${{ secrets.username }} --password-stdin
+
+        - name: Push the Docker image
+          run: docker push ${{ secrets.username }}/notification-service:${IMAGE_TAG}
+
+        - name: Set kubeconfig
+          run: |
+              mkdir -p ~/.kube
+              echo "${{ secrets.KUBE_CONFIG_DATA }}" | base64 -d > ~/.kube/config
+
+        - name: Helm lint
+          run: helm lint ./helm-charts/notification-service
+
+        - name: Deploy using Helm
+          run: |
+              helm upgrade --install notification-service ./helm-charts/notification-service \
+              --set image.repository=${{ secrets.username }}/notification-service \
+              --set image.tag=${IMAGE_TAG}

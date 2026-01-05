@@ -3,7 +3,7 @@ kind: Service
 metadata:
   name: {{ include "notification-service.fullname" . }}
   labels:
-    {{- include "notification-service.labels" . | nindent 4 }}
+    {{- include "notification-service.selectorLabels" . | nindent 4 }}
 spec:
   type: {{ .Values.service.type }}
   ports:

@@ -3,27 +3,18 @@ kind: Deployment
 metadata:
   name: {{ include "notification-service.fullname" . }}
   labels:
-    {{- include "notification-service.labels" . | nindent 4 }}
+    {{- include "notification-service.selectorLabels" . | nindent 4 }}
 spec:
-  {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
-  {{- end }}
   selector:
     matchLabels:
       {{- include "notification-service.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      {{- with .Values.podAnnotations }}
-      annotations:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
       labels:
-        {{- include "notification-service.labels" . | nindent 8 }}
-        {{- with .Values.podLabels }}
-        {{- toYaml . | nindent 8 }}
-        {{- end }}
+        {{- include "notification-service.selectorLabels" . | nindent 8 }}
     spec:
-      {{- with .Values.imagePullSecrets }}
+      {{- if .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
@@ -44,17 +35,22 @@ spec:
             - name: http
               containerPort: {{ .Values.service.port }}
               protocol: TCP
-          {{- with .Values.livenessProbe }}
+          { { - if .Values.startupProbe.enabled } }
+          startupProbe:
+            { { - toYaml .Values.startupProbe.httpGet | nindent 12 } }
+          { { - end } }
+          {{- if .Values.livenessProbe.enabled }}
           livenessProbe:
-            {{- toYaml . | nindent 12 }}
+            {{- toYaml .Values.livenessProbe.spec | nindent 12 }}
           {{- end }}
-          {{- with .Values.readinessProbe }}
+          {{- if .Values.readinessProbe.enabled }}
           readinessProbe:
-            {{- toYaml . | nindent 12 }}
+            {{- toYaml .Values.readinessProbe.spec | nindent 12 }}
           {{- end }}
-          {{- with .Values.resources }}
+          {{- if with .Values.resources.enabled }}
           resources:
-            {{- toYaml . | nindent 12 }}
+            {{- toYaml .Values.resources.limits | nindent 12 }}
+            {{- toYaml .Values.resources.requests | nindent 12 }}
           {{- end }}
           {{- with .Values.volumeMounts }}
           volumeMounts:

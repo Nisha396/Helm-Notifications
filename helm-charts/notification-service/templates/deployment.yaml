@@ -14,7 +14,7 @@ spec:
       labels:
         {{- include "notification-service.selectorLabels" . | nindent 8 }}
     spec:
-      {{- if .Values.imagePullSecrets }}
+      {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
@@ -25,20 +25,16 @@ spec:
       {{- end }}
       containers:
         - name: {{ .Chart.Name }}
-          {{- with .Values.securityContext }}
-          securityContext:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - name: http
-              containerPort: {{ .Values.service.port }}
+              containerPort: {{ .Values.containerPort }}
               protocol: TCP
-          { { - if .Values.startupProbe.enabled } }
+          {{- if .Values.startupProbe.enabled }}
           startupProbe:
-            { { - toYaml .Values.startupProbe.httpGet | nindent 12 } }
-          { { - end } }
+            {{- toYaml .Values.startupProbe.spec | nindent 12 }}
+          {{- end }}
           {{- if .Values.livenessProbe.enabled }}
           livenessProbe:
             {{- toYaml .Values.livenessProbe.spec | nindent 12 }}
@@ -47,10 +43,12 @@ spec:
           readinessProbe:
             {{- toYaml .Values.readinessProbe.spec | nindent 12 }}
           {{- end }}
-          {{- if with .Values.resources.enabled }}
+          {{- if .Values.resources.enabled }}
           resources:
-            {{- toYaml .Values.resources.limits | nindent 12 }}
-            {{- toYaml .Values.resources.requests | nindent 12 }}
+            limits:
+              {{- toYaml .Values.resources.limits | nindent 12 }}
+            requests:
+              {{- toYaml .Values.resources.requests | nindent 12 }}
           {{- end }}
           {{- with .Values.volumeMounts }}
           volumeMounts:

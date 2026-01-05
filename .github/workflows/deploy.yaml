@@ -26,6 +26,9 @@ jobs:
         - name: Push the Docker image
           run: docker push ${{ secrets.username }}/notification-service:${IMAGE_TAG}
 
+        - name: Update the Image Tag
+          run: sed -i "IMAGE_TAG/${IMAGE_TAG}/g" helm-charts/notification-service/values.yaml
+
         - name: Set kubeconfig
           run: |
               mkdir -p ~/.kube

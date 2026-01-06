@@ -40,5 +40,5 @@ jobs:
         - name: Deploy using Helm
           run: |
               helm upgrade --install notification-service ./helm-charts/notification-service \
-              --set image.repository=${{ secrets.username }}/notification-service \
+              --set image.repository=${{ secrets.username }}/helm-notification-service \
               --set image.tag=${IMAGE_TAG}
